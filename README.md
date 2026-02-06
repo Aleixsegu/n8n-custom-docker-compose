@@ -1,6 +1,6 @@
 # n8n Custom Docker Compose
 
-This project sets up a local environment with **n8n** and a custom **Whisper API** service (using `faster-whisper`) running in Docker containers.
+This project sets up a local environment with **n8n**, a custom **Whisper API** service (using `faster-whisper`), and a **YouTube Downloader** service (using `yt-dlp`), all running in Docker containers.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ This project sets up a local environment with **n8n** and a custom **Whisper API
    ```bash
    docker-compose up -d --build
    ```
-   This will build the Whisper Python service and pull the n8n image.
+   This will build the services and pull the n8n image.
 
 3. **Access n8n**:
    Open [http://localhost:5678](http://localhost:5678) in your browser.
@@ -23,45 +23,62 @@ This project sets up a local environment with **n8n** and a custom **Whisper API
 | Service | Address | Description |
 |---------|---------|-------------|
 | **n8n** | `http://localhost:5678` | Workflow automation tool. |
-| **Whisper API** | `http://localhost:8082` | Custom API for OpenAI's Whisper model. |
+| **Whisper API** | `http://localhost:8081` | Custom API for OpenAI's Whisper model. |
+| **YtDlp API** | `http://localhost:8082` | YouTube downloader service. |
 
-> **Note**: Within the Docker network, n8n can access the Whisper service using the hostname `whisper:8082`.
+> **Note**: Within the Docker network, use the following hostnames:
+> - Whisper: `whisper:8081`
+> - YtDlp: `ytdlp:8082`
 
-## How to use Whisper in n8n
+## How to use in n8n
 
-You can transcribe audio files directly within your n8n workflows using the **HTTP Request** node.
+### 1. YouTube Downloader (ytdlp)
 
-### Node Configuration
+Use the **HTTP Request** node to download audio or video.
 
-1. **Add an "HTTP Request" node**.
-2. Configure it with the following settings:
-   - **Method**: `POST`
-   - **URL**: `http://whisper:8082/transcribe`
-   - **Authentication**: `None`
-   - **Send Body**: Toggle `On`
-   - **Body Content Type**: `Multipart-form-data`
-3. **Parameters** (under Body Parameters):
-   - **Parameter Type**: `Form-Data`
-   - **Name**: `file`
-   - **Input Type**: `Binary File`
-   - **Value**: Pick the binary property name from your previous node (usually `data`).
+*   **Method**: `POST`
+*   **URL**: `http://ytdlp:8082/download`
+*   **Body Content Type**: `JSON`
+*   **Body Parameters**:
+    *   `url`: `{{ $json.url }}` (YouTube link)
+    *   `format`: `audio` or `video`
+    *   `quality`: `best` (optional)
 
-### Optional Parameters
+The file is saved to `/downloads`, which matches the configured volume in n8n.
 
-You can add extra fields to the form data to customize the transcription:
-- `model`: Model size (`tiny`, `base`, `small`, `medium`, `large`). Default: `base`.
-- `language`: Language code (e.g., `es`, `en`). Defaults to auto-detection.
-- `task`: `transcribe` or `translate`. Default: `transcribe`.
+### 2. Whisper Transcription
+
+Use the **HTTP Request** node to transcribe the audio file.
+
+*   **Method**: `POST`
+*   **URL**: `http://whisper:8081/transcribe`
+*   **Send Body**: `On`
+*   **Body Content Type**: `Multipart-form-data`
+*   **Parameters**:
+    *   **Parameter Type**: `Form-Data`
+    *   **Name**: `file`
+    *   **Input Type**: `Binary File`
+    *   **Value**: `data` (or your binary property name)
+
+**Optional Parameters:**
+- `model`: `tiny`, `base`, `small`, `medium`, `large`.
+- `language`: e.g., `es`.
+- `condition_on_previous_text`: `true`/`false`.
 
 ## API Endpoints
 
-The Whisper service exposes the following endpoints:
-
+### Whisper Service (`:8081`)
 - `POST /transcribe`: Transcribes an audio file.
 - `GET /health`: Checks if the service is running.
 - `GET /models`: Lists available Whisper models.
-- `GET /info`: Service version and information.
+
+### YtDlp Service (`:8082`)
+- `POST /download`: Downloads video/audio.
+- `POST /info`: Gets video metadata without downloading.
+- `POST /download-transcript`: Downloads subtitles/captions.
+- `GET /health`: Checks if the service is running.
 
 ## Notes
-- **Model Storage**: Whisper models are downloaded automatically and stored in a Docker volume (`whisper_models`) to persist between restarts.
-- **Performance**: The service uses `int8` quantization by default for better performance on CPUs.
+- **Shared Storage**: The `/downloads` directory is shared between `ytdlp` and `n8n`.
+- **Model Storage**: Whisper models are persisted in the `whisper_models` volume.
+- **Performance**: The Whisper service uses `int8` quantization by default for better performance on CPUs.

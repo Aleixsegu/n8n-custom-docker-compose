@@ -22,7 +22,7 @@ COPY app.py .
 RUN mkdir -p /tmp/whisper
 
 # Expose service port
-EXPOSE 8082
+EXPOSE 8081
 
 # Start application
 CMD ["python", "app.py"]

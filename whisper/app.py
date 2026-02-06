@@ -119,6 +119,7 @@ def transcribe():
                 language=language,
                 task=task,
                 beam_size=5,
+                condition_on_previous_text=False,
                 vad_filter=True,  # Voice Activity Detection for better quality
                 vad_parameters=dict(min_silence_duration_ms=500)
             )
@@ -211,4 +212,4 @@ def info():
 
 if __name__ == '__main__':
     logger.info("Starting Whisper Transcription Service on port 8082")
-    app.run(host='0.0.0.0', port=8082, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=False)

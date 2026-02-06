@@ -13,8 +13,14 @@ services:
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Europe/Madrid
+      - NODE_ENV=production
+      - EXECUTIONS_DATA_PRUNE=true
+      - NODE_FUNCTION_ALLOW_BUILTIN=fs,path,crypto
+      - N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES=false
+      - N8N_RESTRICT_FILE_ACCESS_TO=/downloads
     volumes:
       - n8n_data:/home/node/.n8n
+      - ytdlp_downloads:/downloads:ro
 
   whisper:
     build:
@@ -27,10 +33,22 @@ services:
     volumes:
       - whisper_cache:/root/.cache
       - whisper_models:/root/.cache/whisper
-    profiles:
-      - full
+
+  ytdlp:
+    build:
+      context: ./ytdlp
+      dockerfile: Dockerfile
+    container_name: ytdlp
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ytdlp_downloads:/downloads
+      - ytdlp_cache:/root/.cache
 
 volumes:
   n8n_data:
   whisper_cache:
   whisper_models:
+  ytdlp_downloads:
+  ytdlp_cache:
