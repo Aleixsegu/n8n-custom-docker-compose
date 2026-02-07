@@ -1,6 +1,6 @@
 # n8n Custom Docker Compose
 
-This project sets up a local environment with **n8n**, a custom **Whisper API** service (using `faster-whisper`), and a **YouTube Downloader** service (using `yt-dlp`), all running in Docker containers.
+This project sets up a local environment with **n8n**, a custom **Whisper API** service (using `faster-whisper`), a **YouTube Downloader** service (using `yt-dlp`), and a **Llama API** service (using `llama-cpp-python`), all running in Docker containers.
 
 ## Prerequisites
 
@@ -25,10 +25,12 @@ This project sets up a local environment with **n8n**, a custom **Whisper API** 
 | **n8n** | `http://localhost:5678` | Workflow automation tool. |
 | **Whisper API** | `http://localhost:8081` | Custom API for OpenAI's Whisper model. |
 | **YtDlp API** | `http://localhost:8082` | YouTube downloader service. |
+| **Llama API** | `http://localhost:8083` | Custom API for Meta Llama 3 model. |
 
 > **Note**: Within the Docker network, use the following hostnames:
 > - Whisper: `whisper:8081`
 > - YtDlp: `ytdlp:8082`
+> - Llama: `llama:8083`
 
 ## How to use in n8n
 
@@ -65,6 +67,27 @@ Use the **HTTP Request** node to transcribe the audio file.
 - `language`: e.g., `es`.
 - `condition_on_previous_text`: `true`/`false`.
 
+- `condition_on_previous_text`: `true`/`false`.
+
+### 3. Llama Chat Completion
+
+Use the **HTTP Request** node to generate text responses.
+
+*   **Method**: `POST`
+*   **URL**: `http://llama:8083/chat`
+*   **Body Content Type**: `JSON`
+*   **Body Parameters example**:
+    ```json
+    {
+      "messages": [
+        { "role": "system", "content": "You are a helpful assistant." },
+        { "role": "user", "content": "Hello!" }
+      ],
+      "max_tokens": 512,
+      "temperature": 0.7
+    }
+    ```
+
 ## API Endpoints
 
 ### Whisper Service (`:8081`)
@@ -78,7 +101,13 @@ Use the **HTTP Request** node to transcribe the audio file.
 - `POST /download-transcript`: Downloads subtitles/captions.
 - `GET /health`: Checks if the service is running.
 
+### Llama Service (`:8083`)
+- `POST /chat`: Chat completion endpoint (OpenAI compatible format).
+- `POST /generate`: Raw text completion endpoint.
+- `GET /health`: Checks if the service is running and model is loaded.
+
 ## Notes
 - **Shared Storage**: The `/downloads` directory is shared between `ytdlp` and `n8n`.
 - **Model Storage**: Whisper models are persisted in the `whisper_models` volume.
+- **Llama Persistence**: The Llama 3 model (~4.6GB) is persisted in the `llama_models` volume. Initial startup takes a few seconds to load the model from disk to RAM.
 - **Performance**: The Whisper service uses `int8` quantization by default for better performance on CPUs.

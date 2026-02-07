@@ -46,9 +46,23 @@ services:
       - ytdlp_downloads:/downloads
       - ytdlp_cache:/root/.cache
 
+  llama:
+    build:
+      context: ./llama
+      dockerfile: Dockerfile
+    container_name: llama
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - llama_models:/root/.cache/huggingface
+
 volumes:
   n8n_data:
   whisper_cache:
   whisper_models:
   ytdlp_downloads:
   ytdlp_cache:
+  llama_models:
