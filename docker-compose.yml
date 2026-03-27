@@ -17,10 +17,11 @@ services:
       - EXECUTIONS_DATA_PRUNE=true
       - NODE_FUNCTION_ALLOW_BUILTIN=fs,path,crypto
       - N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES=false
-      - N8N_RESTRICT_FILE_ACCESS_TO=/downloads
+      - "N8N_RESTRICT_FILE_ACCESS_TO=/downloads;/shared"
     volumes:
       - n8n_data:/home/node/.n8n
-      - ytdlp_downloads:/downloads:ro
+      - ytdlp_downloads:/downloads
+      - ./shared:/shared
 
   whisper:
     build:
@@ -28,6 +29,8 @@ services:
       dockerfile: Dockerfile
     container_name: whisper
     restart: unless-stopped
+    ports:
+      - "8081:8081"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
@@ -40,6 +43,8 @@ services:
       dockerfile: Dockerfile
     container_name: ytdlp
     restart: unless-stopped
+    ports:
+      - "8082:8082"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
@@ -58,6 +63,19 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - llama_models:/root/.cache/huggingface
+
+  ffmpeg:
+    build:
+      context: ./ffmpeg
+      dockerfile: Dockerfile
+    container_name: ffmpeg
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    volumes:
+      - ytdlp_downloads:/downloads
+      - ./ffmpeg/fonts:/usr/share/fonts/truetype/custom
+      - ./shared:/shared
 
 volumes:
   n8n_data:
