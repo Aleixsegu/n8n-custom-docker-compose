@@ -18,6 +18,10 @@ services:
       - NODE_FUNCTION_ALLOW_BUILTIN=fs,path,crypto
       - N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES=false
       - "N8N_RESTRICT_FILE_ACCESS_TO=/downloads;/shared"
+      - DB_SQLITE_POOL_SIZE=5
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_GIT_NODE_DISABLE_BARE_REPOS=true
+      - EXECUTIONS_TIMEOUT=7200
     volumes:
       - n8n_data:/home/node/.n8n
       - ytdlp_downloads:/downloads
